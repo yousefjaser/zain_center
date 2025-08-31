@@ -3,8 +3,16 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret) {
+      const auth = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+      const expected = `Bearer ${cronSecret}`;
+      if (auth !== expected) {
+        return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+      }
+    }
     const apiKey = process.env.NEXT_PUBLIC_CURRENCYAPI_KEY;
     if (!apiKey) return NextResponse.json({ ok: false, error: "missing currencyapi key" }, { status: 400 });
     const url = `https://api.currencyapi.com/v3/latest?base_currency=JOD&currencies=ILS&apikey=${apiKey}`;
